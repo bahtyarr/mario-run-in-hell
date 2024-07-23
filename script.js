@@ -1,9 +1,14 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Set canvas width and height
-canvas.width = 800;
-canvas.height = 400;
+// Set canvas width and height based on device screen
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 // Define game variables
 let gameSpeed = 2;
@@ -22,13 +27,18 @@ backgroundImage.src = "./assets/hell.jpg";
 dinoImage.src = "./assets/mario.png";
 obstacleImage.src = "./assets/obstacle.png";
 
+// Load sounds
+const backgroundSound = new Audio("./assets/sounds/backsound.mp3");
+const gameOverSound = new Audio("./assets/sounds/game-over.mp3");
+backgroundSound.loop = true;
+
 let dino = {
   x: 50,
   y: canvas.height - 40,
-  width: 30,
-  height: 30,
+  width: 40,
+  height: 40,
   jumping: false,
-  jumpHeight: 150,
+  jumpHeight: 170,
 };
 
 let obstacles = [];
@@ -101,6 +111,9 @@ function update() {
     ) {
       gameOver = true;
       cancelAnimationFrame(animationId);
+      backgroundSound.pause();
+      backgroundSound.currentTime = 0;
+      gameOverSound.play();
     }
   });
 
@@ -112,7 +125,7 @@ function update() {
   });
 
   if (Math.random() < 0.02) {
-    const cactusHeight = 40 + Math.random() * 50;
+    const cactusHeight = 50 + Math.random() * 50;
     const cactusWidth = 15 + Math.random() * 20;
     obstacles.push({
       x: canvas.width,
@@ -133,6 +146,7 @@ function handleKeyDown(event) {
     if (!spacePressed) {
       dino.jumping = true;
       spacePressed = true;
+      startBackgroundSound();
     }
   } else if (event.code === "Enter" && gameOver) {
     resetGame();
@@ -148,6 +162,25 @@ function handleKeyUp(event) {
 document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 
+function handleTouchStart(event) {
+  if (!dino.jumping && !gameOver) {
+    dino.jumping = true;
+    startBackgroundSound();
+  } else if (gameOver) {
+    resetGame();
+  }
+}
+
+document.addEventListener("touchstart", handleTouchStart);
+
+function startBackgroundSound() {
+  if (backgroundSound.paused) {
+    backgroundSound.play().catch((error) => {
+      console.log("Failed to play sound: ", error);
+    });
+  }
+}
+
 function resetGame() {
   gameOver = false;
   score = 0;
@@ -155,6 +188,7 @@ function resetGame() {
   dino.y = canvas.height - 40;
   dino.jumping = false;
 
+  backgroundSound.play();
   startGame();
 }
 
